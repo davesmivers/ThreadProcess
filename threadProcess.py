@@ -76,21 +76,21 @@ class ThreadProcess():
         response_params = None  # Placeholder for response parameters
         return response_params
     
-    def startup(self, **kwargs):
+    def startup_handler(self, **startup_args):
         """
         Placeholder method for performing startup tasks.
 
         """
         pass
 
-    def cleanup(self):
+    def cleanup_handler(self):
         """
         Placeholder method for performing cleanup tasks.
 
         """
         pass
 
-    def __init__(self, args, type='thread', sleep_time=0.02, **kwargs):
+    def __init__(self, runtype='thread', sleep_time=0.02, **startup_args):
         """
         Initializes the ThreadProcess object.
 
@@ -102,14 +102,14 @@ class ThreadProcess():
         self.status = 'init'
         self.sleep_time = sleep_time
 
-        if type == 'thread':
+        if runtype == 'thread':
             self.requestQ = queue.Queue()
             self.responseQ = queue.Queue()
-            self.worker = threading.Thread(target=self.main, args=(args,))
-        elif type == 'process':
+            self.worker = threading.Thread(target=self.main, args=(startup_args,))
+        elif runtype == 'process':
             self.requestQ = multiprocessing.Queue()
             self.responseQ = multiprocessing.Queue()
-            self.worker = multiprocessing.Process(target=self.main, args=(args,))
+            self.worker = multiprocessing.Process(target=self.main, args=(startup_args,))
         else:
             raise ValueError("Invalid execution type. Must be 'thread' or 'process'.")
 
@@ -118,16 +118,16 @@ class ThreadProcess():
         self.status = self.responseQ.get()
     
 
-    def main(self, args):
+    def main(self, startup_args):
         """
         The main process of the ThreadProcess class.
 
         Args:
-            args: Additional arguments needed for the startup process.
+            startup_args (dict): Additional arguments needed for the startup process.
 
         """
         try:
-            self.startup(**args)
+            self.startup_handler(**startup_args)
             self.responseQ.put('started')
         except Exception as e:
             """
@@ -155,7 +155,7 @@ class ThreadProcess():
                         try:
                             response_params = self.request_handler(command, uuid, parameters)
                             success = True
-                        except Exception as e:
+                        except  Exception as e:
                             """
                             Exception handling for errors in the request handler.
                             """
@@ -172,7 +172,7 @@ class ThreadProcess():
                     time.sleep(self.sleep_time)
 
         try:
-            self.cleanup()
+            self.cleanup_handler()
             if request['command'] == 'quit' and respond:
                 response = request
                 request['parameters'] = None
@@ -186,6 +186,7 @@ class ThreadProcess():
             """
             print("Error in cleanup of ThreadProcess:", id(self.worker))
             traceback.print_exc()
+
     
     def request(self, command, parameters={}, respond=True):
         """

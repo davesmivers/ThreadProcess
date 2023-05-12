@@ -1,10 +1,10 @@
 from threadProcess import ThreadProcess
 
 class file_worker(ThreadProcess):
-    def __init__(self, **args):
-        super().__init__(args, **args)  # Initialize the ThreadProcess superclass
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)  # Initialize the ThreadProcess superclass
 
-    def startup(self, **kwargs):
+    def startup_handler(self, **startup_args):
         """
         Startup method overridden from ThreadProcess.
         Perform initialization tasks when the worker process/thread starts.
@@ -13,7 +13,7 @@ class file_worker(ThreadProcess):
             **kwargs: Additional keyword arguments passed during initialization.
 
         """
-        filename, mode = kwargs['filename'], kwargs['mode']
+        filename, mode = startup_args['filename'], startup_args['mode']
         self.file = open(filename, mode)  # Open the file specified in the arguments with the given mode
 
     def request_handler(self, command, uuid, parameters={}):
@@ -39,7 +39,7 @@ class file_worker(ThreadProcess):
         elif command == 'readlines':
             return self.file.readlines()  # Read all lines from the file and return them as the response
 
-    def cleanup(self):
+    def cleanup_handler(self):
         """
         Cleanup method overridden from ThreadProcess.
         Perform cleanup tasks when the worker process/thread finishes.
@@ -49,13 +49,13 @@ class file_worker(ThreadProcess):
 
 if __name__ == '__main__':
     # Create an instance of file_worker for writing
-    file_writer = file_worker(filename='knockknock.txt', mode='a', type='thread')
+    file_writer = file_worker(filename='knockknock.txt', mode='a', runtype='thread')
     file_writer.request('write', {'message': 'knock knock'})  # Send a write request to write "knock knock" to the file
     file_writer.request('write_backwards', {'message': "who's there"})  # Send a write request to write "who's there" backwards to the file
     file_writer.quit(blocking=True)  # Send a quit request to the worker process/thread and wait until it is processed
 
     # Create an instance of file_worker for reading
-    file_reader = file_worker(filename='knockknock.txt', mode='r', type="process")
+    file_reader = file_worker(filename='knockknock.txt', mode='r', runtype="process")
     file_reader.request('readlines', {'message': 'knock knock'})  # Send a readlines request to read all lines from the file
     for line in file_reader.response(blocking=True)[-1]:
         print(line)  # Print each line read from the file
