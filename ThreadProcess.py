@@ -137,7 +137,7 @@ class ThreadProcess():
             print("Error in startup of ThreadProcess:", id(self.worker))
             traceback.print_exc()
             self.status = 'startup_error'
-
+            command, respond = 'quit', False
         if self.status != 'startup_error':
             while True:
                 if not self.requestQ.empty():
@@ -170,7 +170,7 @@ class ThreadProcess():
 
         try:
             self.cleanup_handler()
-            if request['command'] == 'quit' and respond:
+            if command == 'quit' and respond:
                 response = self._response(command, uuid, True, None)
                 self.responseQ.put(response)
             self.status = 'finished'
