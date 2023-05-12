@@ -198,11 +198,12 @@ class ThreadProcess():
         """
         request = parameters
         request.update({'command': command, 'respond': respond})
-        request['uuid'] = str(uuid.uuid1())
+        request['uuid'] = str(uuid.uuid4())
+        self.last_uuid = request['uuid']
         self.requestQ.put(request)
         return request['uuid']
 
-    def response(self, timeout=0, blocking=False):
+    def response(self, id = None, timeout=0, blocking=False):
         """
         Retrieves a response from the worker process/thread.
 
@@ -216,12 +217,17 @@ class ThreadProcess():
             If no response is available within the specified timeout, it returns None.
         """
         if blocking: timeout = 1E5
-
-        if timeout > 0 or not self.responseQ.empty():
-            try:
-                return self.responseQ.get(timeout=timeout)
-            except queue.Empty:
-                return None
+        if id is None: id = self.last_uuid #last request
+        while True:
+            if timeout > 0 or not self.responseQ.empty():
+                try:
+                    response = self.responseQ.get(timeout=timeout)
+                    if response.uuid == id:
+                        return response
+                    else:
+                        self.responseQ.put(response) # if not needed put it back in the back of the queue
+                except queue.Empty:
+                    return None
 
     def quit(self, blocking=True):
         """

@@ -7,7 +7,7 @@ class file_worker(ThreadProcess):
     def startup_handler(self, **startup_args):
         """
         Startup method overridden from ThreadProcess.
-        Perform initialization tasks when the worker process/thread starts.
+        Perfo   rm initialization tasks when the worker process/thread starts.
 
         Args:
             **kwargs: Additional keyword arguments passed during initialization.
@@ -33,7 +33,7 @@ class file_worker(ThreadProcess):
         if command == 'write_line':
             message = parameters['message']  + '\n'
             self.file.write(message)  # Write the message to the file
-        elif command == 'write_backwards':
+        elif command == 'write_line_backwards':
             message_backwards = parameters['message'][::-1] + '\n'
             self.file.write(message_backwards)  # Write the message backwards to the file
         elif command == 'readlines':
@@ -50,13 +50,30 @@ class file_worker(ThreadProcess):
 if __name__ == '__main__':
     # Create an instance of file_worker for writing
     file_writer = file_worker(filename='output.txt', mode='a', runtype='thread')
-    file_writer.request('write_line', {'message': 'knock knock'})  # Send a write request to write "knock knock" to the file
-    file_writer.request('write_line_backwards', {'message': "who's there"})  # Send a write request to write "who's there" backwards to the file
-    file_writer.quit(blocking=True)  # Send a quit request to the worker process/thread and wait until it is processed
+
+    # Send a write request to write "knock knock" to the file
+    file_writer.request('write_line', {'message': 'knock knock'})
+    response = file_writer.response(blocking=True)  # Get the last response
+    print("1st response:")
+    print(response.command, response.uuid, response.success)
+
+    # Send a write request to write "who's there" backwards to the file
+    file_writer.request('write_line_backwards', {'message': "who's there"}, respond=False)
+
+    # Send a quit request to the worker process/thread and wait until it is processed
+    file_writer.quit(blocking=True)
 
     # Create an instance of file_worker for reading
     file_reader = file_worker(filename='output.txt', mode='r', runtype="process")
-    file_reader.request('readlines', {'message': 'knock knock'})  # Send a readlines request to read all lines from the file
-    for line in file_reader.response(blocking=True).result:
-        print(line)  # Print each line read from the file
-    file_reader.quit()  # Send a quit request to the worker process/thread
+
+    # Send a readlines request to read all lines from the file
+    request_id_3 = file_reader.request('readlines', {'message': 'knock knock'})
+
+    print("2nd response:")
+    # Explicitly request request_id_3
+    for line in file_reader.response(blocking=True, id=request_id_3).result:  
+        print(line[:-1])  # Print each line read from the file
+
+    # Send a quit request to the worker process/thread
+    file_reader.quit()
+
