@@ -30,12 +30,12 @@ class file_worker(ThreadProcess):
             The response parameters.
 
         """
-        if command == 'write':
-            message = parameters['message']
-            self.file.writelines([message])  # Write the message to the file
+        if command == 'write_line':
+            message = parameters['message']  + '\n'
+            self.file.write(message)  # Write the message to the file
         elif command == 'write_backwards':
-            message_backwards = parameters['message'][::-1]
-            self.file.writelines([message_backwards])  # Write the message backwards to the file
+            message_backwards = parameters['message'][::-1] + '\n'
+            self.file.write(message_backwards)  # Write the message backwards to the file
         elif command == 'readlines':
             return self.file.readlines()  # Read all lines from the file and return them as the response
 
@@ -49,13 +49,13 @@ class file_worker(ThreadProcess):
 
 if __name__ == '__main__':
     # Create an instance of file_worker for writing
-    file_writer = file_worker(filename='knockknock.txt', mode='a', runtype='thread')
-    file_writer.request('write', {'message': 'knock knock'})  # Send a write request to write "knock knock" to the file
-    file_writer.request('write_backwards', {'message': "who's there"})  # Send a write request to write "who's there" backwards to the file
+    file_writer = file_worker(filename='output.txt', mode='a', runtype='thread')
+    file_writer.request('write_line', {'message': 'knock knock'})  # Send a write request to write "knock knock" to the file
+    file_writer.request('write_line_backwards', {'message': "who's there"})  # Send a write request to write "who's there" backwards to the file
     file_writer.quit(blocking=True)  # Send a quit request to the worker process/thread and wait until it is processed
 
     # Create an instance of file_worker for reading
-    file_reader = file_worker(filename='knockknock.txt', mode='r', runtype="process")
+    file_reader = file_worker(filename='output.txt', mode='r', runtype="process")
     file_reader.request('readlines', {'message': 'knock knock'})  # Send a readlines request to read all lines from the file
     for line in file_reader.response(blocking=True).result:
         print(line)  # Print each line read from the file
