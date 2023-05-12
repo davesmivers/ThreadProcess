@@ -161,11 +161,8 @@ class ThreadProcess():
                             """
                             print("Error in main loop of ThreadProcess:", id(self.worker))
                             traceback.print_exc()
-
                         if respond:
-                            response = {'command': command, 'uuid': uuid}
-                            response['success'] = success
-                            response['parameters'] = response_params
+                            response = self._response(command, uuid, success, response_params)
                             self.responseQ.put(response)
                 else:
                     self.status = 'running'
@@ -174,10 +171,8 @@ class ThreadProcess():
         try:
             self.cleanup_handler()
             if request['command'] == 'quit' and respond:
-                response = request
-                request['parameters'] = None
-                request['success'] = True
-                self.responseQ.put(request)
+                response = self._response(command, uuid, True, None)
+                self.responseQ.put(response)
             self.status = 'finished'
         except Exception as e:
             """
@@ -224,8 +219,7 @@ class ThreadProcess():
 
         if timeout > 0 or not self.responseQ.empty():
             try:
-                response = self.responseQ.get(timeout=timeout)
-                return response['command'], response['uuid'], response['success'], response['parameters']
+                return self.responseQ.get(timeout=timeout)
             except queue.Empty:
                 return None
 
@@ -240,4 +234,33 @@ class ThreadProcess():
         id = self.request('quit', respond=True)
         while blocking:
             response = self.response(blocking=True)
-            if response[1] == id: break
+            if response.uuid == id: break
+
+    class _response():
+        """
+        A helper class representing a response object.
+
+        Attributes:
+            command (str): The command associated with the response.
+            uuid (str): The unique identifier associated with the response.
+            success (bool): Flag indicating the success of the response.
+            result: The result or data associated with the response.
+
+        """
+        def __init__(self, command, uuid, success, result):
+            """
+            Initializes the _response object.
+
+            Args:
+                command (str): The command associated with the response.
+                uuid (str): The unique identifier associated with the response.
+                success (bool): Flag indicating the success of the response.
+                result: The result or data associated with the response.
+
+            """
+            self.command = command
+            self.uuid = uuid
+            self.success = success
+            self.result = result
+    
+        

@@ -57,6 +57,6 @@ if __name__ == '__main__':
     # Create an instance of file_worker for reading
     file_reader = file_worker(filename='knockknock.txt', mode='r', runtype="process")
     file_reader.request('readlines', {'message': 'knock knock'})  # Send a readlines request to read all lines from the file
-    for line in file_reader.response(blocking=True)[-1]:
+    for line in file_reader.response(blocking=True).result:
         print(line)  # Print each line read from the file
     file_reader.quit()  # Send a quit request to the worker process/thread
