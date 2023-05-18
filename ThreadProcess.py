@@ -90,7 +90,7 @@ class ThreadProcess():
         """
         pass
 
-    def __init__(self, runtype='thread', sleep_time=0.02, **startup_args):
+    def __init__(self, runtype='thread', sleep_time=0.001, **startup_args):
         """
         Initializes the ThreadProcess object.
 
@@ -106,10 +106,12 @@ class ThreadProcess():
             self.requestQ = queue.Queue()
             self.responseQ = queue.Queue()
             self.worker = threading.Thread(target=self.main, args=(startup_args,))
+            self.response_lock = threading.Lock()
         elif runtype == 'process':
             self.requestQ = multiprocessing.Queue()
             self.responseQ = multiprocessing.Queue()
             self.worker = multiprocessing.Process(target=self.main, args=(startup_args,))
+            self.response_lock = multiprocessing.Lock()
         else:
             raise ValueError("Invalid execution type. Must be 'thread' or 'process'.")
 
@@ -128,7 +130,7 @@ class ThreadProcess():
         """
         try:
             self.startup_handler(**startup_args)
-            self.responseQ.put('started')
+            with self.response_lock: self.responseQ.put('started')
         except Exception as e:
             """
             Exception handling for startup errors.
@@ -163,7 +165,7 @@ class ThreadProcess():
                             traceback.print_exc()
                         if respond:
                             response = self._response(command, uuid, success, response_params)
-                            self.responseQ.put(response)
+                            with self.response_lock: self.responseQ.put(response)
                 else:
                     self.status = 'running'
                     time.sleep(self.sleep_time)
@@ -171,8 +173,8 @@ class ThreadProcess():
         try:
             self.cleanup_handler()
             if command == 'quit' and respond:
-                response = self._response(command, uuid, True, None)
-                self.responseQ.put(response)
+                response = self._response('quit', uuid, True, None)
+                with self.response_lock: self.responseQ.put(response)
             self.status = 'finished'
         except Exception as e:
             """
@@ -196,38 +198,75 @@ class ThreadProcess():
             str: The unique identifier (UUID) of the request.
 
         """
-        request = parameters
+        request = parameters.copy()
         request.update({'command': command, 'respond': respond})
         request['uuid'] = str(uuid.uuid4())
-        self.last_uuid = request['uuid']
         self.requestQ.put(request)
         return request['uuid']
 
-    def response(self, id = None, timeout=0, blocking=False):
+    def response(self, id=None, timeout=None):
         """
         Retrieves a response from the worker process/thread.
 
         Args:
-            timeout (float): The maximum time to wait for a response in seconds.
+            id (UUID or None): The UUID of the response to retrieve.
+            timeout (float or None): The maximum time to wait for a response in seconds.
 
         Returns:
             tuple or None:
-            Returns a tuple containing the command, UUID, success flag, 
-            and response parameters of the retrieved response. 
+            Returns a tuple containing the command, UUID, success flag,
+            and response parameters of the retrieved response.
             If no response is available within the specified timeout, it returns None.
         """
-        if blocking: timeout = 1E5
-        if id is None: id = self.last_uuid #last request
-        while True:
-            if timeout > 0 or not self.responseQ.empty():
-                try:
-                    response = self.responseQ.get(timeout=timeout)
-                    if response.uuid == id:
-                        return response
-                    else:
-                        self.responseQ.put(response) # if not needed put it back in the back of the queue
-                except queue.Empty:
+        def retrieve_uuid_response(start_time=None):
+            response = None
+            q_items = []
+            for _ in range(self.responseQ.qsize()):
+                trial_response = self.responseQ.get()
+                if trial_response.uuid == id:
+                    response = trial_response
+                else:
+                    q_items.append(trial_response)
+            for item in q_items:
+                self.responseQ.put(item)
+            if response is not None:
+                return response
+            else:
+                # Effectively block by looping until the id is found
+                if start_time is not None and time.time() - start_time > timeout:
+                    raise queue.TimeoutError
+                else:
                     return None
+
+        if timeout is not None and id is not None:
+            start_time = time.time()
+
+        while True:
+            try:
+                if timeout is None and id is None:
+                    # Get next item blocking
+                    return self.responseQ.get()
+
+                elif timeout is None and id is not None:
+                    # Get 'id' item blocking
+                    with self.response_lock:  # Lock the queue
+                        response =  retrieve_uuid_response()
+                    if response is not None: return response
+
+                elif timeout is not None and id is None:
+                    # Get next item non-blocking
+                    return self.responseQ.get(timeout=timeout)
+
+                elif timeout is not None and id is not None:
+                    # Get 'id' item non-blocking
+                    with self.response_lock:  # Lock the queue
+                        response = retrieve_uuid_response(start_time)
+                    if response is not None: return response
+                time.sleep(0.001)
+
+            except queue.Empty:
+                return None
+
 
     def quit(self, blocking=True):
         """
@@ -239,7 +278,7 @@ class ThreadProcess():
         """
         id = self.request('quit', respond=True)
         while blocking:
-            response = self.response(blocking=True)
+            response = self.response(id=id, timeout=None)
             if response.uuid == id: break
 
     class _response():
