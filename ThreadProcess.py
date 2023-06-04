@@ -185,7 +185,7 @@ class ThreadProcess():
             traceback.print_exc()
 
     
-    def request(self, command, parameters={}, respond=True):
+    def request(self, command, parameters={}, respond=False):
         """
         Sends a request to the worker process/thread.
 
