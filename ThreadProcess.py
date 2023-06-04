@@ -139,6 +139,7 @@ class ThreadProcess():
             print("Error in startup of ThreadProcess:", id(self.worker))
             traceback.print_exc()
             self.status = 'startup_error'
+            with self.response_lock: self.responseQ.put('startup_error')
             command, respond = 'quit', False
         if self.status != 'startup_error':
             while True:
