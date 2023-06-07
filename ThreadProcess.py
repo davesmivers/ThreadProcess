@@ -99,7 +99,7 @@ class ThreadProcess():
             type (str): The type of execution ('thread' or 'process').
             sleep_time (float): Time to sleep if there were no requests.
         """
-        self.status = 'init'
+        self.worker_status = 'init'
         self.sleep_time = sleep_time
 
         if runtype == 'thread':
@@ -114,10 +114,11 @@ class ThreadProcess():
             self.response_lock = multiprocessing.Lock()
         else:
             raise ValueError("Invalid execution type. Must be 'thread' or 'process'.")
-
+        
+        self.worker_status = 'starting'
         self.worker.start()
-        self.status = 'starting'
-        self.status = self.responseQ.get()
+        self.worker_status = self.responseQ.get()
+        self.master_status = 'running'
     
 
     def main(self, startup_args):
@@ -138,19 +139,19 @@ class ThreadProcess():
             """
             print("Error in startup of ThreadProcess:", id(self.worker))
             traceback.print_exc()
-            self.status = 'startup_error'
+            self.worker_status = 'startup_error'
             with self.response_lock: self.responseQ.put('startup_error')
             command, respond = 'quit', False
-        if self.status != 'startup_error':
+        if self.worker_status != 'startup_error':
             while True:
                 if not self.requestQ.empty():
-                    self.status = 'processing'
+                    self.worker_status = 'processing'
                     request = self.requestQ.get()
                     command, uuid, respond = request['command'], request['uuid'], request['respond']
                     parameters = {key: value for key, value in request.items()
                                 if key not in ['command', 'uuid', 'respond']}
                     if command == 'quit':
-                        self.status = 'quitting'
+                        self.worker_status = 'quitting'
                         break
                     else:
                         response_params = None
@@ -168,7 +169,7 @@ class ThreadProcess():
                             response = self._response(command, uuid, success, response_params)
                             with self.response_lock: self.responseQ.put(response)
                 else:
-                    self.status = 'running'
+                    self.worker_status = 'running'
                     time.sleep(self.sleep_time)
 
         try:
@@ -176,7 +177,7 @@ class ThreadProcess():
             if command == 'quit' and respond:
                 response = self._response('quit', uuid, True, None)
                 with self.response_lock: self.responseQ.put(response)
-            self.status = 'finished'
+            self.worker_status = 'finished'
         except Exception as e:
             """
             Exception handling for cleanup errors.
@@ -246,23 +247,31 @@ class ThreadProcess():
             try:
                 if timeout is None and id is None:
                     # Get next item blocking
-                    return self.responseQ.get()
+                    response = self.responseQ.get()
+                    if response.command == 'quit': self.master_status = 'quitting'
+                    return response
 
                 elif timeout is None and id is not None:
                     # Get 'id' item blocking
                     with self.response_lock:  # Lock the queue
                         response =  retrieve_uuid_response()
-                    if response is not None: return response
+                    if response is not None: 
+                        if response.command == 'quit': self.master_status = 'quitting'
+                        return response
 
                 elif timeout is not None and id is None:
                     # Get next item non-blocking
-                    return self.responseQ.get(timeout=timeout)
+                    response = self.responseQ.get(timeout=timeout)
+                    if response.command == 'quit': self.master_status = 'quitting'
+                    return response
 
                 elif timeout is not None and id is not None:
                     # Get 'id' item non-blocking
                     with self.response_lock:  # Lock the queue
                         response = retrieve_uuid_response(start_time)
-                    if response is not None: return response
+                    if response is not None:
+                        if response.command == 'quit': self.master_status = 'quitting'
+                        return response
                 time.sleep(0.001)
 
             except queue.Empty:
@@ -278,9 +287,11 @@ class ThreadProcess():
 
         """
         id = self.request('quit', respond=True)
-        while blocking:
-            response = self.response(id=id, timeout=None)
-            if response.uuid == id: break
+        while blocking:            
+            blocking = self.master_status != 'quitting'
+            time.sleep(0.001)
+        
+
 
     class _response():
         """
