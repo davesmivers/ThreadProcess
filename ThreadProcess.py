@@ -4,6 +4,7 @@ import queue  # Provides the Queue class for thread-safe communication between t
 import traceback  # Provides utilities for printing stack traces and exception information
 import time  # Provides functions for working with time and timing operations
 import uuid  # Provides functionality for generating and working with universally unique identifiers (UUIDs)
+import os # Provides functions for interacting with the operating system
 
 
 class ThreadProcess():
@@ -319,5 +320,22 @@ class ThreadProcess():
             self.uuid = uuid
             self.success = success
             self.result = result
+
+class CleverPrint():
+    def __init__(self):
+        if 'CleverPrint' not in __builtins__:
+            __builtins__['CleverPrint'] = {'print': __builtins__['print']}
+        __builtins__['CleverPrint']['ptid'] = []
+        __builtins__['print'] = self.__call__
+
+    def __call__(self, *args, **kwargs):
+        threadID = threading.get_ident()
+        processID = os.getpid()
+        ptid = f'[{processID}-{threadID}]'
+        if ptid not in __builtins__['CleverPrint']['ptid']:
+            __builtins__['CleverPrint']['ptid'].append(ptid)
+        ptid_index = __builtins__['CleverPrint']['ptid'].index(ptid)
+        __builtins__['CleverPrint']['print'](f'{ptid_index} {ptid}', *args, **kwargs)
+
     
         
