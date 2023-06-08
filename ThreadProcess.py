@@ -319,7 +319,7 @@ class ThreadProcess():
             self.success = success
             self.result = result
 
-class CleverPrint():
+class CleverPrint:
 
     def __init__(self):
         if 'CleverPrint' not in __builtins__:
@@ -339,9 +339,10 @@ class CleverPrint():
         if ptid not in __builtins__['CleverPrint']['ptid']:
             __builtins__['CleverPrint']['ptid'].append(ptid)
         ptid_index = __builtins__['CleverPrint']['ptid'].index(ptid)
+        ptid_index_padded = '{:>{width}}'.format(ptid_index, width=3)
         color = __builtins__['CleverPrint']['colors'][ptid_index % len(__builtins__['CleverPrint']['colors'])]
         with __builtins__['CleverPrint']['lock']:
-            __builtins__['CleverPrint']['print'](f'{color}{ptid_index} {ptid}', *args, **kwargs)
+            __builtins__['CleverPrint']['print'](f'{color}{ptid_index_padded} - ', *args, **kwargs)
             __builtins__['CleverPrint']['print']("\033[0m", end='')
         
 
