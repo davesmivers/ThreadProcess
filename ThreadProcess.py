@@ -319,32 +319,6 @@ class ThreadProcess():
             self.uuid = uuid
             self.success = success
             self.result = result
-
-class CleverPrint():
-
-    def __init__(self):
-        if 'CleverPrint' not in __builtins__:
-            print('\nCleverPrint not initialized. Initializing now...\n')
-            __builtins__['CleverPrint'] = {'print': __builtins__['print']}
-        __builtins__['CleverPrint']['ptid'] = []
-        __builtins__['CleverPrint']['colors'] = ['\033[91m', '\033[92m', '\033[93m', '\033[94m', 
-                                                 '\033[95m', '\033[96m', '\033[97m', '\033[98m']
-        __builtins__['CleverPrint']['lock'] = threading.Lock()
-        __builtins__['print'] = self.__call__
-
-
-    def __call__(self, *args, **kwargs):
-        threadID = threading.get_ident()
-        processID = os.getpid()
-        ptid = f'[{processID}-{threadID}]'
-        if ptid not in __builtins__['CleverPrint']['ptid']:
-            __builtins__['CleverPrint']['ptid'].append(ptid)
-        ptid_index = __builtins__['CleverPrint']['ptid'].index(ptid)
-        ptid_index_padded = '{:>{width}}'.format(ptid_index + 1, width=3)
-        color = __builtins__['CleverPrint']['colors'][ptid_index % len(__builtins__['CleverPrint']['colors'])]
-        with __builtins__['CleverPrint']['lock']:
-            __builtins__['CleverPrint']['print'](f'{color}{ptid_index_padded} - ', *args, **kwargs)
-            __builtins__['CleverPrint']['print']("\033[0m", end='')
         
 
 if __name__ ==  '__main__':
