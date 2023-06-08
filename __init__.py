@@ -1,3 +1,3 @@
-from .ThreadProcess import ThreadProcess
+from .ThreadProcess import ThreadProcess, CleverPrint
 
-__all__ = ['ThreadProcess']
+__all__ = ['ThreadProcess', 'CleverPrint']
