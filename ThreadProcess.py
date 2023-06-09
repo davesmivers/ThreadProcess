@@ -286,7 +286,7 @@ class ThreadProcess():
 
         """
         id = self.request('quit', respond=True)
-        while blocking:            
+        while blocking and self.worker_status == 'running':            
             blocking = self.master_status != 'quitting'
             time.sleep(0.001)
         self.master_status = 'finished'
@@ -318,11 +318,9 @@ class ThreadProcess():
             self.command = command
             self.uuid = uuid
             self.success = success
-            self.result = result
-        
+            self.result = result        
 
 if __name__ ==  '__main__':
-    print = CleverPrint()
     print('Main process started')
     
         
