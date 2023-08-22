@@ -57,6 +57,7 @@ class ThreadProcess():
         response(timeout=None): Retrieves a response from the worker process/thread.
         quit(blocking=True): Sends a quit request to the worker process/thread and optionally waits
                              until the quit request is processed.
+        event_mointor(): 
 
     """
 
@@ -144,6 +145,11 @@ class ThreadProcess():
             command, respond = 'quit', False
         if self.worker_status != 'startup_error':
             while True:
+                # Call the event_monitor method to check for any events that need to be handled
+                event_request = self.event_monitor()
+                # If an event was returned, send a request to the worker process/thread to handle it
+                if event_request is not None:
+                    self.request(event_request['command'], event_request['parameters'], True)
                 if not self.requestQ.empty():
                     self.worker_status = 'processing'
                     request = self.requestQ.get()
@@ -185,7 +191,18 @@ class ThreadProcess():
             """
             print("Error in cleanup of ThreadProcess:", id(self.worker))
             traceback.print_exc()
+    
+    def event_monitor(self):
+        """
+        Placeholder method for monitoring events.
 
+        This method should be overridden in subclasses to provide specific event monitoring functionality.
+
+        Returns:
+            None
+
+        """
+        return None        
     
     def request(self, command, parameters={}, respond=False):
         """
