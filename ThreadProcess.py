@@ -41,7 +41,7 @@ class ThreadProcess():
         responseQ (Queue): The queue for receiving responses from the worker process/thread.
         worker (Thread or Process): The worker process/thread handling the main process.
         status (str): The current status of the ThreadProcess instance.
-        sleep_time (float): Time to sleep if there were no requests.
+        loop_time (float): Minimum loop time in seconds. 
 
     Methods:
         main(args): The main process/thread function that should be overridden in subclasses. It
@@ -91,17 +91,17 @@ class ThreadProcess():
         """
         pass
 
-    def __init__(self, runtype='thread', sleep_time=0.001, **startup_args):
+    def __init__(self, runtype='thread', target_loop_period=0.001, **startup_args):
         """
         Initializes the ThreadProcess object.
 
         Args:
             args: Additional arguments needed for the main process.
             type (str): The type of execution ('thread' or 'process').
-            sleep_time (float): Time to sleep if there were no requests.
+            loop_time (float): Time to sleep if there were no requests.
         """
         self.worker_status = 'init'
-        self.sleep_time = sleep_time
+        self.target_loop_period = target_loop_period
 
         if runtype == 'thread':
             self.requestQ = queue.Queue()
@@ -144,12 +144,13 @@ class ThreadProcess():
             with self.response_lock: self.responseQ.put('startup_error')
             command, respond = 'quit', False
         if self.worker_status != 'startup_error':
+            self.last_loop_time = time.time()
+            self.loop_iteration = 0
             while True:
-                # Call the event_monitor method to check for any events that need to be handled
-                event_request = self.event_monitor()
-                # If an event was returned, send a request to the worker process/thread to handle it
-                if event_request is not None:
-                    self.request(event_request['command'], event_request['parameters'], True)
+                self.loop_iteration += 1
+                # Call a generic pre-request function to perform any monitoring/logging/etc.
+                self.pre_request_function()
+                # Check for requests and process them if available
                 if not self.requestQ.empty():
                     self.worker_status = 'processing'
                     request = self.requestQ.get()
@@ -176,7 +177,11 @@ class ThreadProcess():
                             with self.response_lock: self.responseQ.put(response)
                 else:
                     self.worker_status = 'running'
-                    time.sleep(self.sleep_time)
+                    
+                    self.no_request_function()
+                self.post_request_function()
+                self._maintain_loop_time()
+                
 
         try:
             self.cleanup_handler()
@@ -192,7 +197,7 @@ class ThreadProcess():
             print("Error in cleanup of ThreadProcess:", id(self.worker))
             traceback.print_exc()
     
-    def event_monitor(self):
+    def pre_request_function(self):
         """
         Placeholder method for monitoring events.
 
@@ -202,7 +207,31 @@ class ThreadProcess():
             None
 
         """
-        return None        
+        return None  
+
+    def no_request_function(self):
+        """
+        Placeholder method for handling no requests.
+
+        This method should be overridden in subclasses to provide specific functionality.
+
+        Returns:
+            None
+
+        """
+        return None
+
+    def post_request_function(self):
+        """
+        Placeholder method for handling post-request tasks.
+
+        This method should be overridden in subclasses to provide specific functionality.
+
+        Returns:
+            None
+
+        """
+        return None      
     
     def request(self, command, parameters={}, respond=False):
         """
@@ -307,6 +336,25 @@ class ThreadProcess():
             blocking = self.master_status != 'quitting'
             time.sleep(0.001)
         self.master_status = 'finished'
+    
+    import time
+
+    def _maintain_loop_time(self):
+        """
+        Maintains the loop time by sleeping if necessary.
+
+        This method calculates the time elapsed since the last loop iteration,
+        and sleeps for the remaining time until the target loop period is reached.
+        """
+        time_now = time.time()
+        current_loop_period = time_now - self.last_loop_time
+        sleep_time = self.target_loop_period - current_loop_period
+
+        # If the loop iteration took less time than the target period, sleep for the remaining time
+        if sleep_time > 0:
+            time.sleep(sleep_time)
+
+        self.last_loop_time = time_now
         
 
 
