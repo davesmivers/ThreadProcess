@@ -146,7 +146,8 @@ class ThreadProcess():
         if self.worker_status != 'startup_error':
             self.last_loop_time = time.time()
             self.loop_iteration = 0
-            while True:
+            main_thread = threading.main_thread()
+            while main_thread.is_alive():
                 self.loop_iteration += 1
                 # Call a generic pre-request function to perform any monitoring/logging/etc.
                 self.pre_request_function()
