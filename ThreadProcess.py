@@ -356,8 +356,6 @@ class ThreadProcess():
             time.sleep(sleep_time)
 
         self.last_loop_time = time_now
-        
-
 
     class _response():
         """
