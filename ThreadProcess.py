@@ -6,59 +6,57 @@ import time  # Provides functions for working with time and timing operations
 import uuid  # Provides functionality for generating and working with universally unique identifiers (UUIDs)
 import os # Provides functions for interacting with the operating system
 
-class ThreadProcess():
+class ThreadProcess:
     """
-    A generic handler for long-running threads and processes.
+    ThreadProcess: Asynchronous Execution Wrapper
 
-    This class provides a framework for executing and managing long-running threads or processes.
-    It handles the communication between the main process/thread and the worker process/thread.
-    Requests are sent to the worker process/thread via a request queue, and responses are received
-    through a response queue.
+    Description:
+    A wrapper for executing tasks in either a separate thread or process.
+    It provides a uniform interface for sending requests and receiving responses
+    between the main application and the thread/process.
 
     Usage:
-    1. Create an instance of the ThreadProcess class, specifying the desired execution mode ('thread'
-       or 'process') and any additional arguments needed by the main process/thread.
-    2. The main process/thread is started automatically upon initialization.
-    3. Send requests to the worker process/thread by calling the `request()` method.
-    4. Retrieve the responses from the worker process/thread by calling the `response()` method.
+    1. Create an instance of the class.
+    2. Send requests using the `request` method.
+    3. Retrieve responses using the `response` method.
 
     Request Format:
-    - All requests should be dictionaries with the following keys:
-        - 'command': The command to be executed by the worker process/thread.
-        - 'uuid': A unique identifier for the request.
-        - 'respond': A flag indicating whether a response is expected for the request.
-        - Additional keys can be included for command-specific parameters.
+    ---------------
+    Requests should follow this dictionary format:
+    - 'command': The action for the worker process/thread to execute.
+    - 'uuid': A unique identifier for that request.
+    - 'respond': A flag indicating if the request expects a response.
+    - Additional keys can be added  to a 'parameters' dict for command-specific arguments.
 
-    Note:
-    - All requests should return a response. If a request does not result in a response, the request
-      will be echoed back as the response.
-    - If the 'command' value is 'quit', the worker thread/process will terminate.
-    - Exceptions during startup, the main loop, or cleanup are caught and logged with relevant error
-      messages, allowing the program to continue executing.
-
-    Attributes:
-        requestQ (Queue): The queue for sending requests to the worker process/thread.
-        responseQ (Queue): The queue for receiving responses from the worker process/thread.
-        worker (Thread or Process): The worker process/thread handling the main process.
-        status (str): The current status of the ThreadProcess instance.
-        loop_time (float): Minimum loop time in seconds. 
+    Notes:
+    - Each request is identified by a UUID.
+    - The response will also carry the same UUID for identification.
+    - The request can optionally request a response.
+    - The response can be fetched at any time after the request.
 
     Methods:
-        main(args): The main process/thread function that should be overridden in subclasses. It
-                    handles the main logic of the process/thread execution.
-        request_handler(command, uuid, parameters): Placeholder method for processing individual requests.
-                                                     It should be overridden in subclasses to provide
-                                                     specific request processing functionality.
-        startup(**kwargs): Placeholder method for performing startup tasks. It should be overridden
-                           in subclasses to provide specific startup functionality.
-        cleanup(): Placeholder method for performing cleanup tasks. It should be overridden in
-                   subclasses to provide specific cleanup functionality.
-        request(command, parameters={}, respond=True): Sends a request to the worker process/thread.
-        response(timeout=None): Retrieves a response from the worker process/thread.
-        quit(blocking=True): Sends a quit request to the worker process/thread and optionally waits
-                             until the quit request is processed.
-        event_mointor(): 
+    - __init__: Initializes the ThreadProcess object.
+    - request_handler: Placeholder method for processing individual requests.
+    - startup_handler: Placeholder method for performing startup tasks.
+    - cleanup_handler: Placeholder method for performing cleanup tasks.
+    - main: The main process of the ThreadProcess class.
+    - pre_request_function: Placeholder method for monitoring events.
+    - no_request_function: Placeholder method for handling no requests.
+    - post_request_function: Placeholder method for handling post-request tasks.
+    - request: Sends a request to the worker process/thread.
+    - response: Retrieves a response from the worker process/thread.
+    - quit: Sends a quit request to the worker process/thread.
+    - _maintain_loop_time: Maintains the loop time by sleeping if necessary.
+    - _response: A helper class representing a response object.
 
+    Attributes:
+    - worker_status: Status of the worker thread/process.
+    - target_loop_period: Target loop duration for the worker.
+    - requestQ: Queue for placing requests.
+    - responseQ: Queue for fetching responses.
+    - worker: Thread or Process instance.
+    - response_lock: Lock for managing concurrent access to the response queue.
+    ... and others ...
     """
 
     def request_handler(self, command, uuid, parameters):
