@@ -131,6 +131,7 @@ class ThreadProcess:
         try:
             self.startup_handler(**startup_args)
             with self.response_lock: self.responseQ.put('started')
+            command, respond = None, False
         except Exception as e:
             """
             Exception handling for startup errors.
