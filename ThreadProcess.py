@@ -282,7 +282,7 @@ class ThreadProcess:
             else:
                 # Effectively block by looping until the id is found
                 if start_time is not None and time.time() - start_time > timeout:
-                    raise TimeoutError("Timeout waiting for response.")
+                    return TimeoutError("Timeout waiting for response.")
                 else:
                     return None
 
