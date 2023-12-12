@@ -4,7 +4,6 @@ import queue  # Provides the Queue class for thread-safe communication between t
 import traceback  # Provides utilities for printing stack traces and exception information
 import time  # Provides functions for working with time and timing operations
 import uuid  # Provides functionality for generating and working with universally unique identifiers (UUIDs)
-import os # Provides functions for interacting with the operating system
 
 class ThreadProcess:
     """
