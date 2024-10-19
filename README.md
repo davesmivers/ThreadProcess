@@ -8,13 +8,25 @@ This is an example demonstrating the usage of the `ThreadProcess` class for file
 Usage
 -----
 
-1.  Clone the repository to your local machine:
+1.  To install `ThreadProcess`, you have two options: Simple Installation To simply use the package, run:
 
-    git clone https://github.com/davesmivers/ThreadProcess
+$ pip install git+https://github.com/davesmivers/ThreadProcess
+
+For an Editable Installation If you want to make changes to the code, clone the repository and install it in editable mode: Clone the repository:
+
+$ git clone https://github.com/davesmivers/ThreadProcess.git
+
+Change to the project directory:
+
+ $ cd ThreadProcess
+
+Install the package in editable mode:
+
+$ pip install -e .
 
 2.  Import the necessary classes:
 
-    from threadProcess import ThreadProcess
+    from threadprocess import ThreadProcess
 
 3.  Create a subclass of `ThreadProcess` to handle file operations. In the subclass, override the `startup()`, `request_handler()`, and `cleanup()` methods:
 
