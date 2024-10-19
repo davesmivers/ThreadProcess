@@ -10,19 +10,19 @@ Usage
 
 1.  To install `ThreadProcess`, you have two options: Simple Installation To simply use the package, run:
 ```bash
-$ pip install git+https://github.com/davesmivers/ThreadProcess
+pip install git+https://github.com/davesmivers/ThreadProcess
 ```
 For an Editable Installation If you want to make changes to the code, clone the repository and install it in editable mode: Clone the repository:
 ```bash
-$ git clone https://github.com/davesmivers/ThreadProcess.git
+git clone https://github.com/davesmivers/ThreadProcess.git
 ```
 Change to the project directory:
 ```bash
-$ cd ThreadProcess
+cd ThreadProcess
 ```
 Install the package in editable mode:
 ```bash
-$ pip install -e .
+pip install -e .
 ```
 2.  Import the necessary classes:
 ```python
