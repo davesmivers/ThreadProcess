@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "ThreadProcess"
+name = "threadprocess"
 version = "0.1.0"
 description = "Sub-thread and sub-process package"
 authors = ["David Megson-Smith <davesmivesr@gmail.com>"]
@@ -13,3 +13,9 @@ pytest = "^6.2.4"
 [build-system]
 requires = ["poetry-core>=1.0.0"]
 build-backend = "poetry.core.masonry.api"
+
+# Ensure the include section is defined correctly as an array
+include = [
+    "threadprocess/**/*.py",
+    "README.md"
+]

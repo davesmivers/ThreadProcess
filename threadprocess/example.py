@@ -1,4 +1,4 @@
-from threadProcess import ThreadProcess
+from threadprocess import ThreadProcess
 
 class file_worker(ThreadProcess):
     def __init__(self, **kwargs):
@@ -33,9 +33,11 @@ class file_worker(ThreadProcess):
         if command == 'write_line':
             message = parameters['message']  + '\n'
             self.file.write(message)  # Write the message to the file
+            return f'Line written successfully {message}'
         elif command == 'write_line_backwards':
             message_backwards = parameters['message'][::-1] + '\n'
             self.file.write(message_backwards)  # Write the message backwards to the file
+            return f'Line written backwards successfully {message_backwards}'
         elif command == 'readlines':
             return self.file.readlines()  # Read all lines from the file and return them as the response
 
@@ -52,8 +54,8 @@ if __name__ == '__main__':
     file_writer = file_worker(filename='output.txt', mode='a', runtype='thread')
 
     # Send a write request to write "knock knock" to the file
-    file_writer.request('write_line', {'message': 'knock knock'})
-    response = file_writer.response(blocking=True)  # Get the last response
+    file_writer.request('write_line', {'message': 'knock knock'}, respond=True)
+    response = file_writer.response()  # Get the last response
     print("1st response:")
     print(response.command, response.uuid, response.success)
 
@@ -67,11 +69,11 @@ if __name__ == '__main__':
     file_reader = file_worker(filename='output.txt', mode='r', runtype="process")
 
     # Send a readlines request to read all lines from the file
-    request_id_3 = file_reader.request('readlines', {'message': 'knock knock'})
+    request_id_3 = file_reader.request('readlines', {'message': 'knock knock'}, respond=True)
 
     print("2nd response:")
     # Explicitly request request_id_3
-    for line in file_reader.response(blocking=True, id=request_id_3).result:  
+    for line in file_reader.response(id=request_id_3).result:  
         print(line[:-1])  # Print each line read from the file
 
     # Send a quit request to the worker process/thread
