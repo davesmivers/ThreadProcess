@@ -9,28 +9,28 @@ Usage
 -----
 
 1.  To install `ThreadProcess`, you have two options: Simple Installation To simply use the package, run:
-
+```bash
 $ pip install git+https://github.com/davesmivers/ThreadProcess
-
+```
 For an Editable Installation If you want to make changes to the code, clone the repository and install it in editable mode: Clone the repository:
-
+```bash
 $ git clone https://github.com/davesmivers/ThreadProcess.git
-
+```
 Change to the project directory:
-
- $ cd ThreadProcess
-
+```bash
+$ cd ThreadProcess
+```
 Install the package in editable mode:
-
+```bash
 $ pip install -e .
-
+```
 2.  Import the necessary classes:
-
-    from threadprocess import ThreadProcess
+```python
+from threadprocess import ThreadProcess
+```
 
 3.  Create a subclass of `ThreadProcess` to handle file operations. In the subclass, override the `startup()`, `request_handler()`, and `cleanup()` methods:
-
-    
+```python    
     class FileWorker(ThreadProcess):
         def startup(self, **kwargs):
             # Perform initialization tasks, e.g., open the file
@@ -40,11 +40,10 @@ $ pip install -e .
     
         def cleanup(self):
             # Perform cleanup tasks, e.g., close the file
-      
+   ```   
 
 4.  In the `__name__ == '__main__'` block, create an instance of the `FileWorker` subclass:
-
-    
+```python 
     if __name__ == '__main__':
         # Create an instance of FileWorker for writing
         file_writer = FileWorker(filename='knockknock.txt', mode='a', type='thread')
@@ -68,7 +67,7 @@ $ pip install -e .
     
         # Send a quit request to the worker process/thread
         file_reader.quit()
-      
+```     
 
 5.  Run the script to execute the file operations.
 
